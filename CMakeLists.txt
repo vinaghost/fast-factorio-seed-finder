@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.30)
 project(seed_finder LANGUAGES CXX)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 

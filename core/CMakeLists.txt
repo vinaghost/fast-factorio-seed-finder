@@ -1,9 +1,9 @@
 add_library(core
-    spot_noise.cpp
-    spot_noise.hpp
-    spot_noise_constants.hpp
+    finder.cpp
+    finder.hpp
     noise.cpp
     noise.hpp
+    constants.hpp
     utils.cpp
     utils.hpp
     random.hpp
@@ -11,8 +11,15 @@ add_library(core
     gradients.hpp
 )
 
+include(FetchContent)
+FetchContent_Declare(
+    argparse
+    GIT_REPOSITORY https://github.com/p-ranav/argparse.git
+)
+FetchContent_MakeAvailable(argparse)
+
 target_include_directories(core PUBLIC ./)
 
-target_link_libraries(core PUBLIC warnings_interface)
+target_link_libraries(core PUBLIC warnings_interface argparse)
 
 set_property(TARGET core PROPERTY CXX_STANDARD 26)

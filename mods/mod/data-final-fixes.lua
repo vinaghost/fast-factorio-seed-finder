@@ -34,29 +34,30 @@ end
 
 remove_proto({
     ["iron-ore"] = true,
-    ["copper-ore"] = true,
-    ["coal"] = true,
-    ["stone"] = true,
+    ["copper-ore"] = false,
+    ["coal"] = false,
+    ["stone"] = false,
 })
 
-data.raw["noise-function"]["resource_autoplace_all_patches"].expression = "regular_patches"
+data.raw["noise-function"]["resource_autoplace_all_patches"].expression = "starter_patches"
 
-data.raw["noise-function"]["resource_autoplace_all_patches"].local_expressions.regular_patches = "spot_noise{x = x,\z
-                                    y = y,\z
-                                    density_expression = regular_density_at(distance),\z
-                                    spot_quantity_expression = regular_spot_quantity_expression,\z
-                                    spot_radius_expression = min(32, regular_rq_factor * regular_spot_quantity_expression ^ (1/3)),\z
-                                    spot_favorability_expression = 1,\z
-                                    seed0 = map_seed,\z
-                                    seed1 = seed1,\z
-                                    region_size = 1024,\z
-                                    candidate_spot_count = candidate_spot_count,\z
-                                    suggested_minimum_candidate_point_spacing = 45.254833995939045,\z
-                                    skip_span = regular_patch_set_count,\z
-                                    skip_offset = regular_patch_set_index,\z
-                                    hard_region_target_quantity = 0,\z
-                                    basement_value = basement_value,\z
-                                    maximum_spot_basement_radius = 128}"
+data.raw["noise-function"]["resource_autoplace_all_patches"].local_expressions.starter_patches = "spot_noise{x = x,\z
+                                     y = y,\z
+                                     density_expression = 5,\z
+                                     spot_quantity_expression = 2000000,\z
+                                     spot_radius_expression = 30,\z
+                                     spot_favorability_expression = clamp((elevation_lakes - 1) / 10, 0, 1) * starting_modulation * 2 - \z
+                                                                    distance / starting_resource_placement_radius + random_penalty_at(0.5, 1),\z
+                                     seed0 = map_seed,\z
+                                     seed1 = seed1 + 1,\z
+                                     skip_span = starting_patch_set_count,\z
+                                     skip_offset = starting_patch_set_index,\z
+                                     region_size = starting_resource_placement_radius * 2,\z
+                                     candidate_spot_count = 32,\z
+                                     suggested_minimum_candidate_point_spacing = 32,\z
+                                     hard_region_target_quantity = 1,\z
+                                     basement_value = basement_value,\z
+                                     maximum_spot_basement_radius = 128}"
 -- data.raw["noise-function"]["resource_autoplace_all_patches"].local_expressions.regular_spot_quantity_expression = "1000000"
 
 -- data.raw["noise-expression"]["elevation"].expression = "\

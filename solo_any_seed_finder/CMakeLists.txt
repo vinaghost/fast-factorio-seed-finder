@@ -1,5 +1,7 @@
 add_executable(solo_any_seed_finder
     main.cpp
+    stages.hpp
+    stages.cpp
 )
 
 target_link_libraries(solo_any_seed_finder PRIVATE core)

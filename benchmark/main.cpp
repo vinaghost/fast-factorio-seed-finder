@@ -1,5 +1,4 @@
 #include "noise.hpp"
-#include "spot_noise.hpp"
 #include <chrono>
 #include <print>
 #include <iostream>
@@ -24,22 +23,22 @@ void benchmark(int n) {
 
 void benchmark_2(int n) {
     MapGenSettings settings;
-    for (PatchType type = IRON; type < NB_PATCH_TYPE; type++) {
-        settings.frequencies[type] = 6.f;
-        settings.sizes[type] = 6.f;
-        settings.frequencies[type] = 6.f;
+    for (ResourceType t = IRON; t < NB_RESOURCE_TYPE; ++t) {
+        settings.frequencies[t] = 6.f;
+        settings.sizes[t] = 6.f;
+        settings.richness[t] = 6.f;
     }
-
     auto start = std::chrono::high_resolution_clock::now();
-    RegularSpotNoiseCache* cache = new RegularSpotNoiseCache(settings);
+    NoisePrecompute* precompute = new NoisePrecompute(settings);
+    NoiseCache* cache = new NoiseCache;
     auto end = std::chrono::high_resolution_clock::now();
-    std::println("cache init {}", std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
+    std::println("cache/precompute init {}", std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
 
     float sum = 0.f;
 
     start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < n; i++) {
-        auto patches = regular_patches(settings, *cache, i);
+        auto patches = regular_patches(*precompute, *cache, i);
         for (const auto& patch : patches[1]) {
             sum += patch.radius;
         }
@@ -48,6 +47,7 @@ void benchmark_2(int n) {
 
     std::println("{} {}", sum, std::chrono::duration_cast<std::chrono::milliseconds>(end - start));
 
+    delete precompute;
     delete cache;
 }
 

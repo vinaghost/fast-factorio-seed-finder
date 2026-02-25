@@ -9,21 +9,6 @@
     },
     
     {
-      "name": "elevated-rails",
-      "enabled": false
-    },
-    
-    {
-      "name": "quality",
-      "enabled": false
-    },
-    
-    {
-      "name": "space-age",
-      "enabled": false
-    },
-    
-    {
       "name": "mod",
       "enabled": true
     }

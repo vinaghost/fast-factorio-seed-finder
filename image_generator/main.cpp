@@ -1,5 +1,4 @@
 #include "noise.hpp"
-#include "spot_noise.hpp"
 #include <chrono>
 #include <print>
 #include <iostream>
@@ -17,14 +16,16 @@ int main(int argc, char* argv[]) {
     constexpr int IMG_SIZE = 896;
 
     MapGenSettings settings;
-    for (PatchType t = IRON; t < NB_PATCH_TYPE; ++t) {
+    for (ResourceType t = IRON; t < NB_RESOURCE_TYPE; ++t) {
         settings.frequencies[t] = 6.f;
         settings.sizes[t] = 6.f;
         settings.richness[t] = 6.f;
     }
-    RegularSpotNoiseCache* cache = new RegularSpotNoiseCache(settings);
+    NoisePrecompute* precompute = new NoisePrecompute(settings);
+    NoiseCache* cache = new NoiseCache;
 
-    auto patches = regular_patches(settings, *cache, seed0);
+    auto patches = regular_patches(*precompute, *cache, seed0);
+    delete precompute;
     delete cache;
 
     // Output buffer: RGB bytes
@@ -38,9 +39,9 @@ int main(int argc, char* argv[]) {
             float wy = py - shift;
 
             float best_val = -std::numeric_limits<float>::infinity();
-            PatchType best_type = NB_PATCH_TYPE;
+            ResourceType best_type = NB_RESOURCE_TYPE;
 
-            for (PatchType type = IRON; type < NB_PATCH_TYPE; ++type) {
+            for (ResourceType type = IRON; type < NB_RESOURCE_TYPE; ++type) {
                 float best_for_type = -std::numeric_limits<float>::infinity();
                 for (auto it = patches[type].begin(); it != patches[type].end(); ++it) {
                     const Patch &p = *it;
@@ -62,7 +63,7 @@ int main(int argc, char* argv[]) {
             }
 
             size_t idx = (py * IMG_SIZE + px) * 3;
-            if (best_val <= 0.f || best_type == NB_PATCH_TYPE) {
+            if (best_val <= 0.f || best_type == NB_RESOURCE_TYPE) {
                 // background white
                 img[idx+0] = 255; img[idx+1] = 255; img[idx+2] = 255;
             } else {
