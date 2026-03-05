@@ -184,35 +184,59 @@ struct Patch {
     float quantity;
 };
 
-struct PatchArray {
-    std::array<Patch, MAX_NB_SPOTS> data;
-    size_t count = 0;
-
+class PatchArray {
+public:
     inline void insert(int32_t x, int32_t y, float radius, float quantity) {
-        assert(count < data.size());
-        data[count] = {x, y, radius, quantity};
-        count++;
+        assert(_count < _data.size());
+        _data[_count] = {x, y, radius, quantity};
+        _count++;
     }
 
     inline void clear() {
-        count = 0;
+        _count = 0;
     }
 
     inline auto begin() {
-        return data.begin();
+        return _data.begin();
     }
 
     inline auto begin() const {
-        return data.begin();
+        return _data.begin();
     }
 
     inline auto end() {
-        return data.begin() + count;
+        return _data.begin() + _count;
     }
 
     inline auto end() const {
-        return data.begin() + count;
+        return _data.begin() + _count;
     }
+
+    inline size_t size() const {
+        return _count;
+    }
+
+    inline Patch& at(size_t i) {
+        assert(i < _count);
+        return _data[i];
+    }
+
+    inline const Patch& at(size_t i) const {
+        assert(i < _count);
+        return _data[i];
+    }
+
+    inline Patch& operator[](size_t i) {
+        return at(i);
+    }
+
+    inline const Patch& operator[](size_t i) const {
+        return at(i);
+    }
+
+private:
+    std::array<Patch, MAX_NB_SPOTS> _data;
+    size_t _count = 0;
 };
 
 // NOT thread safe.

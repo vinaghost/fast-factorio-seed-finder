@@ -92,7 +92,7 @@ public:
 
         if (_heap.size() < _max_size) {
             _heap.push(value);
-        } else if (value > _heap.top()) {
+        } else if (Compare()(value, _heap.top())) {
             _heap.pop();
             _heap.push(value);
         }

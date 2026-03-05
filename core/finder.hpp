@@ -36,6 +36,8 @@ public:
 
     using SeedScorePair = std::pair<uint32_t, float>;
     using EvalFunction = std::function<EvalResult(const MapGenSettings&, const NoisePrecompute&, NoiseCache&, SeedScorePair)>;
+    template<typename T>
+    using EvalFunctionWithCache = std::function<EvalResult(const MapGenSettings&, const NoisePrecompute&, NoiseCache&, SeedScorePair, T& custom_cache)>;
 
     struct StageSettings {
         // For a given integer n, the regular patches are the exact same for the seeds 2n and 2n+1.
@@ -52,8 +54,6 @@ public:
         uint32_t seed_nb_to_next_stage;
     };
 
-    using Stage = std::pair<EvalFunction, StageSettings>;
-
     Finder(const MapGenSettings& settings) : _map_gen_settings(settings) {}
 
     /**
@@ -63,11 +63,45 @@ public:
      * 
      * Stages are ran in order of insertion.
      */
-    void add_stage(EvalFunction, StageSettings);
+    inline void add_stage(EvalFunction eval_function, StageSettings settings) {
+        _stages.emplace_back(
+            [=](const MapGenSettings& settings, const NoisePrecompute& precompute, NoiseCache& n_cache, SeedScorePair pair, void*) -> EvalResult {
+                return eval_function(settings, precompute, n_cache, pair);
+            },
+            settings,
+            [] { return nullptr; },
+            [](void*) { return; }
+        );
+    }
+    /**
+     * Same as add_stage but the eval function gets a reference to a custom cache.
+     * The can be of any type and there is one cache per worker, so it does not need
+     * to be thread safe. This cache main use case is if you need some very big array
+     * for your eval function, that array should be in the cache, so you don't need
+     * to reallocate it every time.
+     */
+    template<typename CustomCacheType>
+    void add_stage_with_cache(EvalFunctionWithCache<CustomCacheType> eval_function, StageSettings settings) {
+        _stages.emplace_back(
+            [=](const MapGenSettings& settings, const NoisePrecompute& precompute, NoiseCache& n_cache, SeedScorePair pair, void* cache) -> EvalResult {
+                return eval_function(settings, precompute, n_cache, pair, *(CustomCacheType*)cache);
+            },
+            settings,
+            [] { return new CustomCacheType; },
+            [](void* cache) { delete (CustomCacheType*)cache; }
+        );
+    }
 
     int run(std::string program_name, int argc, char* argv[]);
 
 private:
+    struct Stage {
+        std::function<EvalResult(const MapGenSettings&, const NoisePrecompute&, NoiseCache&, SeedScorePair, void* custom_cache)> eval_function;
+        StageSettings settings;
+        std::function<void*()> cache_factory;
+        std::function<void(void*)> cache_dealloc;
+    };
+
     void worker_first_stage(int id, const Stage&, const NoisePrecompute&,
         bool check_twin_seeds, std::atomic<uint64_t>& progress);
     void worker_other_stages(int id, const Stage&, const NoisePrecompute&,

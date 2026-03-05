@@ -6,10 +6,6 @@
 #include <argparse/argparse.hpp>
 #include <chrono>
 
-void Finder::add_stage(EvalFunction eval_function, StageSettings settings) {
-    _stages.push_back(std::make_pair(eval_function, settings));
-}
-
 int Finder::run(std::string program_name, int argc, char* argv[]) {
     if (_stages.size() == 0) {
         std::cerr << "At least one stage must be added before calling Finder::run." << std::endl;
@@ -66,7 +62,7 @@ int Finder::run(std::string program_name, int argc, char* argv[]) {
 
     for (size_t stage_idx = 0; stage_idx < _stages.size(); stage_idx++) {
         const auto& stage = _stages[stage_idx];
-        const auto& stage_settings = stage.second;
+        const auto& stage_settings = stage.settings;
 
         bool check_twin_seeds = false;
         if (_twin_seeds_already_checked == false && stage_settings.check_twin_seeds == true) {
@@ -151,35 +147,41 @@ void Finder::worker_first_stage(
     const uint32_t first_seed = id * factor + _run_options.first_stage_first_seed;
     const uint32_t seed_span = _run_options.threads * factor;
 
-    NoiseCache cache;
+    NoiseCache noise_cache;
+    void* custom_cache = stage.cache_factory();
 
     for (uint64_t seed64 = first_seed; seed64 < (uint64_t)_run_options.first_stage_last_seed; seed64 += seed_span) {
         uint32_t seed = (uint32_t)seed64;
-        auto results = stage.first(_map_gen_settings, precompute, cache, {seed, 0.f});
+        auto results = stage.eval_function(_map_gen_settings, precompute, noise_cache, {seed, 0.f}, custom_cache);
         if (!results.eliminate) _top_seeds.insert({seed, results.score});
         progress += factor;
     }
+
+    stage.cache_dealloc(custom_cache);
 }
 
 void Finder::worker_other_stages(
     int, const Stage& stage, const NoisePrecompute& precompute,
     bool check_twin_seeds, std::atomic<uint64_t>& progress
 ) {
-    NoiseCache cache;
+    NoiseCache noise_cache;
+    void* custom_cache = stage.cache_factory();
 
     while (!_previous_top_seeds.empty()) {
         SeedScorePair pair = _previous_top_seeds.get_pop();
 
-        auto results = stage.first(_map_gen_settings, precompute, cache, pair);
+        auto results = stage.eval_function(_map_gen_settings, precompute, noise_cache, pair, custom_cache);
         if (!results.eliminate) _top_seeds.insert({pair.first, results.score});
         progress++;
 
         if (check_twin_seeds) {
             pair.first++;
 
-            results = stage.first(_map_gen_settings, precompute, cache, pair);
+            results = stage.eval_function(_map_gen_settings, precompute, noise_cache, pair, custom_cache);
             if (!results.eliminate) _top_seeds.insert({pair.first, results.score});
             progress++;
         }
     }
+
+    stage.cache_dealloc(custom_cache);
 }
