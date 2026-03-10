@@ -1,7 +1,4 @@
 *.vs
 *.vscode
-*.venv
-*__pycache__
 
 build
-compare_out
