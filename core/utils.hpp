@@ -319,6 +319,14 @@ struct Position {
         return (a - b).length();
     }
 
+    auto manhattan_length() const {
+        return std::abs(x) + std::abs(y);
+    }
+
+    static constexpr auto manhattan_distance(Position a, Position b) {
+        return (a - b).manhattan_length();
+    }
+
     // direction EAST is means no rotation, south means 90 degrees clockwise
     constexpr Position rotated(Direction direction) const {
         switch (direction) {
@@ -326,6 +334,7 @@ struct Position {
             case SOUTH: return { -y, x };
             case WEST: return { -x, -y };
             case NORTH: return { y, -x };
+            default: throw std::runtime_error("Invalid direction value.");
         }
     }
 
@@ -433,6 +442,17 @@ struct Box {
             Position<T>::min(a.left_top, b.left_top),
             Position<T>::max(a.right_bottom, b.right_bottom)
         );
+    }
+
+    // returns the axial symmetric of the box along the direction
+    constexpr Box flipped(Direction direction) const {
+        switch (direction) {
+            case EAST:
+            case WEST: return Box(left_top.x, -right_bottom.y, right_bottom.x, -left_top.y);
+            case SOUTH:
+            case NORTH: return Box(-right_bottom.x, left_top.y, -left_top.x, right_bottom.y);
+            default: throw std::runtime_error("Invalid direction value.");
+        }
     }
 
     constexpr T side_position(Direction direction) const {

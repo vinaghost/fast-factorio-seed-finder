@@ -353,8 +353,9 @@ int Finder<SeedCache>::run(std::string program_name, int argc, char* argv[]) {
         reverse.emplace_back(std::move(_top_seeds.get_pop()));
     }
 
+    uint64_t rank = 0;
     std::ofstream out(out_path);
-    out << "seed;score;water scale;water coverage;elevation type" << std::endl;
+    out << "rank;seed;score;water scale;water coverage;elevation type" << std::endl;
     for (auto it = reverse.rbegin(); it != reverse.rend(); it++) {
         std::string elevation_type;
         if (it->elevation_type == ELEVATION_2_0) {
@@ -365,7 +366,8 @@ int Finder<SeedCache>::run(std::string program_name, int argc, char* argv[]) {
             elevation_type = "island";
         }
 
-        out << it->seed << ";"
+        out << ++rank << ";"
+            << it->seed << ";"
             << it->score << ";"
             << _water_scales[it->water_scale_idx] << ";"
             << _water_coverages[it->water_coverage_idx] << ";"
