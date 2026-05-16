@@ -27,6 +27,35 @@ float union_area(const PatchArray& patches) {
     return sum;
 }
 
+float union_area(const Patches& patches, bool include_oil) {
+    float sum = 0;
+
+    iterate_patches(patches, [&](const Patch& p, ResourceType type, size_t) {
+        if (include_oil || type != OIL) {
+            sum += (float)M_PI * p.radius*p.radius;
+        }
+    });
+
+    iterate_patches(patches, [&](const Patch& p1, ResourceType type1, size_t i) {
+        if (!include_oil && type1 == OIL) return;
+        iterate_patches(patches, [&](const Patch& p2, ResourceType type2, size_t j) {
+            if (j <= i || (!include_oil && type2 == OIL)) return;
+
+            float rr = p1.radius + p2.radius;
+
+            int32_t distance_2 = PositionI32::distance_2(p1.pos, p2.pos);
+            if (distance_2 > rr*rr) return;
+            
+            float distance = std::sqrt((float)distance_2);
+            float w = rr - distance;
+            float union_ = UNION_FACTOR * std::sqrt(w*w*w * p1.radius * p2.radius / rr);
+            sum -= union_;
+        });
+    });
+
+    return sum;
+}
+
 bool is_point_in_patch(const PatchArray& patches, PositionI32 position) {
     for (const auto& p : patches) {
         if (PositionI32::distance_2(p.pos, position) <= p.radius*p.radius) return true;

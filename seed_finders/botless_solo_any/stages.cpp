@@ -111,7 +111,7 @@ Finder<SeedCache>::EvalResult stage2_eval(
 ) {
     Noise noise(seed, true, false);
     Patches r_patches = regular_patches(precompute, noise_cache, seed, { 0, 0 });
-    Patches s_patches = starter_patches(settings, precompute, noise, noise_cache, seed, { 0, 0 });
+    Patches s_patches = starter_patches(settings, precompute, noise, noise_cache, seed);
     float best_score = 0.f;
 
     auto try_box = [&](PositionI32 offset, Direction direction, bool flipped) {
@@ -145,7 +145,7 @@ Finder<SeedCache>::EvalResult stage3_eval(
     const MapGenSettings& settings, const NoisePrecompute& precompute, NoiseCache& noise_cache, uint32_t seed, SeedCache* seed_cache
 ) {
     Noise noise(seed, true, settings.elevation_type == ELEVATION_2_0 ? true : false);
-    Patches s_patches = starter_patches(settings, precompute, noise, noise_cache, seed, { 0, 0 });
+    Patches s_patches = starter_patches(settings, precompute, noise, noise_cache, seed);
     Patches r_patches = regular_patches(precompute, noise_cache, seed, { 0, 0 });
 
     float coal_water_distance = INFINITY;

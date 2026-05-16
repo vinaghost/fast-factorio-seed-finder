@@ -70,7 +70,7 @@ public:
     >;
     template<typename T>
     using EvalFunctionWithCache = std::function<
-        EvalResult(const MapGenSettings&, const NoisePrecompute&, NoiseCache&, uint32_t seed, SeedCache*, T& custom_cache)
+        EvalResult(const MapGenSettings&, const NoisePrecompute&, NoiseCache&, uint32_t seed, SeedCache*, T& stage_cache)
     >;
 
     struct StageSettings {
@@ -79,15 +79,15 @@ public:
         //
         // True => check all seeds.
         // False => only check even number seeds.
-        // If any stage has this set to true, this will true for 
+        // If any stage has this set to true, it will true for 
         // every following stages, ignoring the setting.
         bool check_twin_seeds = false;
 
-        // If any stage has this set to true, this will true for 
+        // If any stage has this set to true, it will true for 
         // every following stages, ignoring the setting.
         bool check_water_settings = false;
 
-        // If any stage has this set to true, this will true for 
+        // If any stage has this set to true, it will true for 
         // every following stages, ignoring the setting.
         bool check_elevation_types = false;
 
@@ -111,6 +111,10 @@ public:
         _water_coverages = coverages;
     }
 
+    void set_elevation_types(std::vector<ElevationType> types) {
+        _elevation_types = types;
+    }
+
     /**
      * EvalFunction should return the new score.
      * SeedScorePair contains the seed and its score from the previous stage.
@@ -130,22 +134,22 @@ public:
         );
     }
     /**
-     * Same as add_stage but the eval function gets a reference to a custom cache.
+     * Same as add_stage but the eval function gets a reference to a stage cache.
      * The cache can be of any type and there is one per worker, so it does not need
      * to be thread safe. This cache main use case is if you need some very big array
      * for your eval function, that array should be in the cache, so you don't need
      * to reallocate it every time.
      */
-    template<typename CustomCacheType>
-    void add_stage_with_cache(EvalFunctionWithCache<CustomCacheType> eval_function, StageSettings settings) {
+    template<typename StageCacheType>
+    void add_stage_with_cache(EvalFunctionWithCache<StageCacheType> eval_function, StageSettings settings) {
         _stages.emplace_back(
             [=](const MapGenSettings& settings, const NoisePrecompute& precompute, NoiseCache& n_cache,
                 uint32_t seed, SeedCache* seed_cache, void* cache) -> EvalResult {
-                return eval_function(settings, precompute, n_cache, seed, seed_cache, *(CustomCacheType*)cache);
+                return eval_function(settings, precompute, n_cache, seed, seed_cache, *(StageCacheType*)cache);
             },
             settings,
-            [] { return new CustomCacheType; },
-            [](void* cache) { delete (CustomCacheType*)cache; }
+            [] { return new StageCacheType; },
+            [](void* cache) { delete (StageCacheType*)cache; }
         );
     }
 
@@ -154,7 +158,7 @@ public:
 private:
     struct Stage {
         std::function<
-            EvalResult(const MapGenSettings&, const NoisePrecompute&, NoiseCache&, uint32_t seed, SeedCache*, void* custom_cache)
+            EvalResult(const MapGenSettings&, const NoisePrecompute&, NoiseCache&, uint32_t seed, SeedCache*, void* stage_cache)
         > eval_function;
         StageSettings settings;
         std::function<void*()> cache_factory;
@@ -176,6 +180,7 @@ private:
     MapGenSettings _map_gen_settings;
     std::vector<float> _water_scales;
     std::vector<float> _water_coverages;
+    std::vector<ElevationType> _elevation_types = { ELEVATION_2_0, ELEVATION_1_1, ELEVATION_ISLAND };
 
     bool _elevation_types_already_checked = false;
     bool _twin_seeds_already_checked = false;
@@ -283,7 +288,7 @@ int Finder<SeedCache>::run(std::string program_name, int argc, char* argv[]) {
             _elevation_types_already_checked = true;
         }
         if (check_elevation_types) {
-            std::println("Adding different elevation types (increases the number of seeds by 3x)");
+            std::println("Adding different elevation types (increases the number of seeds by {}x)", _elevation_types.size());
         }
 
         std::atomic<uint64_t> progress;
@@ -295,7 +300,7 @@ int Finder<SeedCache>::run(std::string program_name, int argc, char* argv[]) {
             total = (uint64_t)_previous_top_seeds.size();
             if (check_twin_seeds) total *= 2;
             if (check_water_settings) total *= (uint64_t)(_water_scales.size() * _water_coverages.size());
-            if (check_elevation_types) total *= 3;
+            if (check_elevation_types) total *= (uint64_t)(_elevation_types.size());
         }
 
         _top_seeds.clear();
@@ -393,39 +398,46 @@ void Finder<SeedCache>::worker_first_stage(
 
     MapGenSettings map_gen_settings = _map_gen_settings;
     NoiseCache noise_cache;
-    void* custom_cache = stage.cache_factory();
+    void* stage_cache = stage.cache_factory();
 
     size_t max_scale = check_water_settings ? _water_scales.size() : 1;
     size_t max_coverage = check_water_settings ? _water_coverages.size() : 1;
-    ElevationType max_elevation_type = check_elevation_types ? NB_ELEVATION_TYPE : ELEVATION_1_1;
 
     for (uint64_t seed64 = first_seed; seed64 < (uint64_t)_run_options.first_stage_last_seed; seed64 += seed_span) {
         uint32_t seed = (uint32_t)seed64;
 
         for (int scale = 0; scale < max_scale; scale++) {
             for (int coverage = 0; coverage < max_coverage; coverage++) {
-                for (ElevationType elevation_type = ELEVATION_2_0; elevation_type < max_elevation_type; elevation_type++) {
+                auto check_type = [&](ElevationType elevation_type) {
                     const NoisePrecompute& precompute = precomputes[scale * _water_coverages.size() + coverage];
                     map_gen_settings.water_scale = _water_scales[scale];
                     map_gen_settings.water_coverage = _water_coverages[coverage];
                     map_gen_settings.elevation_type = elevation_type;
 
                     if constexpr (std::is_void_v<SeedCache>) {
-                        auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, seed, nullptr, custom_cache);
+                        auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, seed, nullptr, stage_cache);
                         if (!results.eliminate) _top_seeds.insert({ seed, elevation_type, scale, coverage, results.score });
                     } else {
                         SeedCache seed_cache;
-                        auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, seed, &seed_cache, custom_cache);
+                        auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, seed, &seed_cache, stage_cache);
                         if (!results.eliminate) _top_seeds.insert({ seed, elevation_type, scale, coverage, results.score, seed_cache});
                     }
 
                     progress += factor;
+                };
+
+                if (check_elevation_types) {
+                    for (ElevationType elevation_type : _elevation_types) {
+                        check_type(elevation_type);
+                    }
+                } else {
+                    check_type(ELEVATION_2_0);
                 }
             }
         }
     }
 
-    stage.cache_dealloc(custom_cache);
+    stage.cache_dealloc(stage_cache);
 }
 
 template<typename SeedCache>
@@ -435,7 +447,7 @@ void Finder<SeedCache>::worker_other_stages(
 ) {
     MapGenSettings map_gen_settings = _map_gen_settings;
     NoiseCache noise_cache;
-    void* custom_cache = stage.cache_factory();
+    void* stage_cache = stage.cache_factory();
 
     auto do_seed = [&](Seed<SeedCache> s) {
         map_gen_settings.water_scale = _water_scales[s.water_scale_idx];
@@ -444,11 +456,11 @@ void Finder<SeedCache>::worker_other_stages(
         const NoisePrecompute& precompute = precomputes[s.water_scale_idx*_water_coverages.size() + s.water_coverage_idx];
 
         if constexpr (std::is_void_v<SeedCache>) {
-            auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, s.seed, nullptr, custom_cache);
+            auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, s.seed, nullptr, stage_cache);
             if (!results.eliminate) _top_seeds.insert({ s.seed, s.elevation_type, s.water_scale_idx, s.water_coverage_idx, results.score });
         } else {
             SeedCache seed_cache = s.cache;
-            auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, s.seed, &seed_cache, custom_cache);
+            auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, s.seed, &seed_cache, stage_cache);
             if (!results.eliminate) _top_seeds.insert({ s.seed, s.elevation_type, s.water_scale_idx, s.water_coverage_idx, results.score, seed_cache});
         }
 
@@ -458,10 +470,10 @@ void Finder<SeedCache>::worker_other_stages(
             s.seed++;
 
             if constexpr (std::is_void_v<SeedCache>) {
-                auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, s.seed, nullptr, custom_cache);
+                auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, s.seed, nullptr, stage_cache);
                 if (!results.eliminate) _top_seeds.insert({ s.seed, s.elevation_type, s.water_scale_idx, s.water_coverage_idx, results.score });
             } else {
-                auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, s.seed, &s.cache, custom_cache);
+                auto results = stage.eval_function(map_gen_settings, precompute, noise_cache, s.seed, &s.cache, stage_cache);
                 if (!results.eliminate) _top_seeds.insert({ s.seed, s.elevation_type, s.water_scale_idx, s.water_coverage_idx, results.score, s.cache});
             }
 
@@ -474,7 +486,7 @@ void Finder<SeedCache>::worker_other_stages(
         if (check_water_settings && check_elevation_types) {
             for (int scale = 0; scale < _water_scales.size(); scale++) {
                 for (int coverage = 0; coverage < _water_coverages.size(); coverage++) {
-                    for (ElevationType elevation_type = ELEVATION_2_0; elevation_type < NB_ELEVATION_TYPE; elevation_type++) {
+                    for (ElevationType elevation_type : _elevation_types) {
                         s.water_scale_idx = scale;
                         s.water_coverage_idx = coverage;
                         s.elevation_type = elevation_type;
@@ -497,7 +509,7 @@ void Finder<SeedCache>::worker_other_stages(
         }
 
         if (check_elevation_types) {
-            for (ElevationType elevation_type = ELEVATION_2_0; elevation_type < NB_ELEVATION_TYPE; elevation_type++) {
+            for (ElevationType elevation_type : _elevation_types) {
                 s.elevation_type = elevation_type;
                 do_seed(s);
             }
@@ -507,5 +519,5 @@ void Finder<SeedCache>::worker_other_stages(
         do_seed(s);
     }
 
-    stage.cache_dealloc(custom_cache);
+    stage.cache_dealloc(stage_cache);
 }

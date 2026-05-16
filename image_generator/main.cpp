@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
     NoiseCache cache;
 
     auto regular = regular_patches(precompute, cache, seed0, { 0, 0 });
-    auto starter = starter_patches(settings, precompute, noise, cache, seed0, { 0, 0 });
+    auto starter = starter_patches(settings, precompute, noise, cache, seed0);
     std::array<PatchArray, 9> biters;
     for (int i = 0; i < 9; i++) {
         biters[i] = enemy_bases(settings, precompute, seed0, { i % 3 - 1, i / 3 - 1 });

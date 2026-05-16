@@ -133,7 +133,7 @@ Finder<SeedCache>::EvalResult stage2_eval(
     const MapGenSettings& settings, const NoisePrecompute& precompute, NoiseCache& noise_cache, uint32_t seed, SeedCache* seed_cache
 ) {
     Noise noise(seed, true, false);
-    Patches s_patches = starter_patches(settings, precompute, noise, noise_cache, seed, { 0, 0 });
+    Patches s_patches = starter_patches(settings, precompute, noise, noise_cache, seed);
     Patches r_patches = regular_patches(precompute, noise_cache, seed, { 0, 0 });
 
     Direction direction = seed_cache->mixer_direction;
@@ -219,7 +219,7 @@ Finder<SeedCache>::EvalResult stage3_eval(
     const MapGenSettings& settings, const NoisePrecompute& precompute, NoiseCache& noise_cache, uint32_t seed, SeedCache* seed_cache
 ) {
     Noise noise(seed, true, settings.elevation_type == ELEVATION_2_0 ? true : false);
-    Patches s_patches = starter_patches(settings, precompute, noise, noise_cache, seed, { 0, 0 });
+    Patches s_patches = starter_patches(settings, precompute, noise, noise_cache, seed);
     Patches r_patches = regular_patches(precompute, noise_cache, seed, { 0, 0 });
 
     Direction direction = seed_cache->mixer_direction;

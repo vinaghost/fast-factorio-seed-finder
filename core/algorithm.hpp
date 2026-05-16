@@ -7,6 +7,7 @@
 
 // -/+ 20% approximation
 float union_area(const PatchArray& patches);
+float union_area(const Patches& patches, bool include_oil = false);
 
 bool is_point_in_patch(const PatchArray&, PositionI32 position);
 

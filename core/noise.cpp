@@ -573,11 +573,11 @@ static std::array<Candidate, NB_CANDIDATES[BITER]> generate_candidates_biters(co
 
 Patches starter_patches(
     const MapGenSettings& settings, const NoisePrecompute& precompute, const Noise& noise, NoiseCache& cache,
-    const uint32_t seed0, const PositionI32 region
+    const uint32_t seed0
 ) {
     Patches patches;
 
-    auto candidates = generate_candidates<STARTER>(cache, seed0, region);
+    auto candidates = generate_candidates<STARTER>(cache, seed0, { 0, 0 });
 
     for (ResourceType type = IRON; type <= STONE; type++) {
         const auto offset = OFFSETS[type];

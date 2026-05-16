@@ -290,7 +290,25 @@ private:
 
 using Patches = std::array<PatchArray, NB_RESOURCE_TYPE>;
 
+inline void iterate_patches(Patches& patches, std::function<void(Patch&, ResourceType, size_t i)> callback) {
+    for (ResourceType type = IRON; type < NB_RESOURCE_TYPE; type++) {
+        PatchArray& array = patches[type];
+        for (size_t i = 0; i < array.size(); i++) {
+            callback(array[i], type, i);
+        }
+    }
+}
+
+inline void iterate_patches(const Patches& patches, std::function<void(const Patch&, ResourceType, size_t i)> callback) {
+    for (ResourceType type = IRON; type < NB_RESOURCE_TYPE; type++) {
+        const PatchArray& array = patches[type];
+        for (size_t i = 0; i < array.size(); i++) {
+            callback(array[i], type, i);
+        }
+    }
+}
+
 // Noise& must have quick_multioctave_precompute == true
-Patches starter_patches(const MapGenSettings&, const NoisePrecompute&, const Noise&, NoiseCache&, uint32_t seed, PositionI32 region);
+Patches starter_patches(const MapGenSettings&, const NoisePrecompute&, const Noise&, NoiseCache&, uint32_t seed);
 Patches regular_patches(const NoisePrecompute&, NoiseCache&, uint32_t seed, PositionI32 region);
 PatchArray enemy_bases(const MapGenSettings&, const NoisePrecompute&, uint32_t seed, PositionI32 region);
