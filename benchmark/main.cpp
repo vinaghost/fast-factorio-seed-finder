@@ -64,7 +64,7 @@ void benchmark_3(int n) {
     start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < n; i++) {
         Noise noise(i, true, false);
-        auto patches = starter_patches(settings, precompute, noise, cache, i);
+        starter_patches(settings, precompute, noise, cache, i);
     }
     end = std::chrono::high_resolution_clock::now();
 

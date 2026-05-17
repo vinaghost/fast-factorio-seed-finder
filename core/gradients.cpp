@@ -1,3 +1,4 @@
+#include <cstdint>
 #include "gradients.hpp"
 #include "math.hpp"
 

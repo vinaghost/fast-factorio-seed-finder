@@ -588,7 +588,7 @@ Patches starter_patches(
         const float base_density = precompute.get_starter_base_densities()[type];
         float total_density = 0.f;
 
-        for (int i = 0; i < STARTER_NB_SPOTS; i++) {
+        for (uint32_t i = 0; i < STARTER_NB_SPOTS; i++) {
             auto &candidate = candidates[i*SPANS[STARTER] + offset];
             candidates_ptr[i] = &candidate;
 

@@ -227,14 +227,14 @@ Finder<SeedCache>::EvalResult stage3_eval(
     BoxI32 burner_box = (std::get<BoxI32>(MALL_BOXES[1]) + seed_cache->mall_boxes_offset).rotated(direction);
 
     float coal_water_distance = INFINITY;
-    for (int i = 0; i < s_patches[COAL].size(); i++) {
+    for (size_t i = 0; i < s_patches[COAL].size(); i++) {
         const auto& p = s_patches[COAL][i];
 
         if (burner_box.distance_2(p.pos) - (int32_t)p.radius > MAX_WATER_BURNER_DISTANCE*MAX_WATER_BURNER_DISTANCE) continue;
 
         if (p.radius < MIN_NEAR_WATER_COAL_RADIUS) {
             bool connected = false;
-            for (int j = 0; j < s_patches[COAL].size(); j++) {
+            for (size_t j = 0; j < s_patches[COAL].size(); j++) {
                 const auto& p2 = s_patches[COAL][j];
                 float r = p.radius + p2.radius + 25;
                 if (i != j && PositionI32::distance_2(p.pos, p2.pos) < r*r) {

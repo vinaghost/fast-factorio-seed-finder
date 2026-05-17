@@ -33,10 +33,10 @@ inline float log2f(float v) {
     return (float)((float)((float)((float)((float)std::bit_cast<int32_t>(v)
                                                        * 0.00000011920929f)
                                                - 124.22552f)
-                                       - (float)(std::bit_cast<float>(std::bit_cast<uint32_t>(v) & 0x7FFFFF | 0x3F000000)
+                                       - (float)(std::bit_cast<float>((std::bit_cast<uint32_t>(v) & 0x7FFFFF) | 0x3F000000)
                                                * 1.4980303f))
                                - (float)(1.72588
-                                       / (float)(std::bit_cast<float>(std::bit_cast<uint32_t>(v) & 0x7FFFFF | 0x3F000000)
+                                       / (float)(std::bit_cast<float>((std::bit_cast<uint32_t>(v) & 0x7FFFFF) | 0x3F000000)
                                                + 0.35208872f)));
 }
 

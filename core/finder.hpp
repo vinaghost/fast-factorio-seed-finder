@@ -16,8 +16,8 @@ template<typename SeedCache>
 struct Seed {
     uint32_t seed;
     ElevationType elevation_type;
-    int water_scale_idx;
-    int water_coverage_idx;
+    size_t water_scale_idx;
+    size_t water_coverage_idx;
     float score;
     SeedCache cache;
 };
@@ -26,8 +26,8 @@ template<>
 struct Seed<void> {
     uint32_t seed;
     ElevationType elevation_type;
-    int water_scale_idx;
-    int water_coverage_idx;
+    size_t water_scale_idx;
+    size_t water_coverage_idx;
     float score;
 };
     
@@ -249,9 +249,9 @@ int Finder<SeedCache>::run(std::string program_name, int argc, char* argv[]) {
 
     std::print("Precomputing noise data...");
     std::vector<NoisePrecompute> precomputes;
-    for (int scale = 0; scale < _water_scales.size(); scale++) {
+    for (size_t scale = 0; scale < _water_scales.size(); scale++) {
         _map_gen_settings.water_scale = _water_scales[scale];
-        for (int coverage = 0; coverage < _water_coverages.size(); coverage++) {
+        for (size_t coverage = 0; coverage < _water_coverages.size(); coverage++) {
             _map_gen_settings.water_coverage = _water_coverages[coverage];
             precomputes.emplace_back(_map_gen_settings);
         }
@@ -337,11 +337,12 @@ int Finder<SeedCache>::run(std::string program_name, int argc, char* argv[]) {
 
             std::print("\rStage {}/{} progress: {}/{} ({:.3f}%). ETA: {:%H:%M:%S}", stage_idx+1, _stages.size(),
                 thousands_separator(current_progress), thousands_separator(total), 100.f * current_progress / total, eta);
+	    std::cout << std::flush;
 
             previous_progress = current_progress;
             previous_stage_time = current_time;
 
-            std::this_thread::sleep_for(100ms);
+            std::this_thread::sleep_until(current_time + 100ms);
         }
 
         auto stage_end = std::chrono::high_resolution_clock::now();
@@ -406,8 +407,8 @@ void Finder<SeedCache>::worker_first_stage(
     for (uint64_t seed64 = first_seed; seed64 < (uint64_t)_run_options.first_stage_last_seed; seed64 += seed_span) {
         uint32_t seed = (uint32_t)seed64;
 
-        for (int scale = 0; scale < max_scale; scale++) {
-            for (int coverage = 0; coverage < max_coverage; coverage++) {
+        for (size_t scale = 0; scale < max_scale; scale++) {
+            for (size_t coverage = 0; coverage < max_coverage; coverage++) {
                 auto check_type = [&](ElevationType elevation_type) {
                     const NoisePrecompute& precompute = precomputes[scale * _water_coverages.size() + coverage];
                     map_gen_settings.water_scale = _water_scales[scale];
@@ -484,8 +485,8 @@ void Finder<SeedCache>::worker_other_stages(
     while (!_previous_top_seeds.empty()) {
         Seed<SeedCache> s = _previous_top_seeds.get_pop();
         if (check_water_settings && check_elevation_types) {
-            for (int scale = 0; scale < _water_scales.size(); scale++) {
-                for (int coverage = 0; coverage < _water_coverages.size(); coverage++) {
+            for (size_t scale = 0; scale < _water_scales.size(); scale++) {
+                for (size_t coverage = 0; coverage < _water_coverages.size(); coverage++) {
                     for (ElevationType elevation_type : _elevation_types) {
                         s.water_scale_idx = scale;
                         s.water_coverage_idx = coverage;
@@ -498,8 +499,8 @@ void Finder<SeedCache>::worker_other_stages(
         }
 
         if (check_water_settings) {
-            for (int scale = 0; scale < _water_scales.size(); scale++) {
-                for (int coverage = 0; coverage < _water_coverages.size(); coverage++) {
+            for (size_t scale = 0; scale < _water_scales.size(); scale++) {
+                for (size_t coverage = 0; coverage < _water_coverages.size(); coverage++) {
                     s.water_scale_idx = scale;
                     s.water_coverage_idx = coverage;
                     do_seed(s);

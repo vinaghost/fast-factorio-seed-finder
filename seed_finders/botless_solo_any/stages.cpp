@@ -11,14 +11,12 @@ constexpr int32_t NOISE_SAMPLING_DISTANCE = 4;
 
 constexpr float MALL_WEIGHT = 1.f;
 constexpr float COAL_WATER_DISTANCE_WEIGHT = 0.3f;
-constexpr float FRONT_COAL_WEIGHT = 0.4f;
-constexpr float OIL_WEIGHT = 0.15f;
+// constexpr float FRONT_COAL_WEIGHT = 0.4f;
+// constexpr float OIL_WEIGHT = 0.15f;
 
 constexpr int32_t BACKSIDE_MAX_DISTANCE = 245;
 constexpr int32_t BACKSIDE_MAX_DISTANCE_BETWEEN_PATCHES = 20;
 constexpr BoxI32 BACKSIDE_BOX(-165, -35, -145, 45);
-
-constexpr int32_t STARTER_AREA_RADIUS_EXTENDED = 150;
 
 constexpr std::array<ResourceBox, 10> MALL_BOXES{
     ResourceBox{ STONE,  { -25, -70,  70,   0 }, .001f, 0.f },
@@ -33,16 +31,11 @@ constexpr std::array<ResourceBox, 10> MALL_BOXES{
     ResourceBox{ COAL,   { -36,  40, -28,  65 }, .1f,   0.f }  // Burners
 };
 constexpr PositionI32 BURNERS_POS(-28, 53);
-constexpr int32_t MALL_BOXES_HEIGTH = 110;
 constexpr std::array<BoxI32, 2> BASE_BOXES{
     BoxI32(24, 65, 154, 90),
     BoxI32(24,  5,  76, 65)
 };
 constexpr BoxI32 OIL_BOX(10, -120, 150, 200);
-constexpr BoxI32 COAL_BOX(-70, -60, -28, 100);
-constexpr float MIN_FRONTSIDE_COAL_AREA = 1400;
-constexpr float BEST_FRONTSIDE_COAL_AREA = 2500;
-constexpr BoxI32 STONE_BOX(-25, -60, 100, 0);
 
 constexpr int32_t MAX_COAL_WATER_DISTANCE = 30;
 

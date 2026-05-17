@@ -8,10 +8,8 @@
 #include <print>
 #include <argparse/argparse.hpp>
 
-#pragma warning( push, 0 )
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
-#pragma warning( pop )
 
 int main(int argc, char* argv[]) {
     argparse::ArgumentParser program("image_generator");

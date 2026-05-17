@@ -1,5 +1,7 @@
 #pragma once
 
+#include <exception>
+#include <stdexcept>
 #include <array>
 #include <cstdint>
 #include <cmath>
@@ -526,8 +528,8 @@ struct Box {
         return x*x + y*y;
     }
 
-    inline float distance(Position<T> point) const {\
-        std::sqrt((float)distance_2(point));
+    inline float distance(Position<T> point) const {
+        return std::sqrt((float)distance_2(point));
     }
 };
 
