@@ -1,0 +1,21 @@
+{
+  "name": "fast-factorio-seed-finder",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
+  "features": {
+    "ghcr.io/devcontainers-extra/features/cmake:1": {
+      "version": "3.30.9"
+    }
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y ninja-build build-essential g++-14 gcc-14",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "cmake.configureOnOpen": true,
+        "cmake.generator": "Ninja"
+      },
+      "extensions": [
+        "ms-vscode.cpptools-extension-pack"
+      ]
+    }
+  }
+}
