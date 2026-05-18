@@ -25,4 +25,4 @@ cmake --build "$BUILD_DIR" --config "$CONFIG" -j
 
 echo "Build succeeded."
 
-#./build/seed_finders/solo_any/solo_any_seed_finder -o output.csv --threads 2 --last-seed 1000000
+#./build/seed_finders/tas_any/tas_any_seed_finder -o output.csv --threads 2 --last-seed 1000000
