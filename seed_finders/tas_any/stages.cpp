@@ -138,10 +138,10 @@ Finder<SeedCache>::EvalResult stage2_eval(
     Patches patches = starter_patches(settings, precompute, noise, noise_cache, seed);
 
     if (
-        patches[IRON].size() != 2 ||
-        patches[COPPER].size() != 2 ||
-        patches[COAL].size() != 1 ||
-        patches[STONE].size() != 1
+        patches[IRON].size() < 2 ||
+        patches[COPPER].size() < 2 ||
+        patches[COAL].size() < 1 ||
+        patches[STONE].size() < 1
     ) {
         return { .eliminate = true, .score = -INFINITY };
     }
@@ -212,10 +212,10 @@ Finder<SeedCache>::EvalResult stage3_eval(
     Patches r_patches = regular_patches(precompute, noise_cache, seed, {0, 0});
 
     if (
-        s_patches[IRON].size() != 2 ||
-        s_patches[COPPER].size() != 2 ||
-        s_patches[COAL].size() != 1 ||
-        s_patches[STONE].size() != 1
+        s_patches[IRON].size() < 2 ||
+        s_patches[COPPER].size() < 2 ||
+        s_patches[COAL].size() < 1 ||
+        s_patches[STONE].size() < 1
     ) {
         return { true, -INFINITY };
     }
@@ -230,24 +230,24 @@ Finder<SeedCache>::EvalResult stage3_eval(
     iterate_patches(s_patches, transform_patches);
     iterate_patches(r_patches, transform_patches);
 
-    const Patch& iron1 = s_patches[IRON][0];
-    const Patch& iron2 = s_patches[IRON][1];
-    const Patch& copper1 = s_patches[COPPER][0];
-    const Patch& copper2 = s_patches[COPPER][1];
+    // const Patch& iron1 = s_patches[IRON][0];
+    // const Patch& iron2 = s_patches[IRON][1];
+    // const Patch& copper1 = s_patches[COPPER][0];
+    // const Patch& copper2 = s_patches[COPPER][1];
     const Patch& coal = s_patches[COAL][0];
 
-    if (
-        iron1.radius < MIN_IRON_RADIUS * 0.5f ||
-        iron2.radius < MIN_IRON_RADIUS * 0.5f ||
-        copper1.radius < MIN_COPPER_RADIUS * 0.5f ||
-        copper2.radius < MIN_COPPER_RADIUS * 0.5f
-    ) {
-        return { true, -INFINITY };
-    }
+    // if (
+    //     iron1.radius < MIN_IRON_RADIUS * 0.5f ||
+    //     iron2.radius < MIN_IRON_RADIUS * 0.5f ||
+    //     copper1.radius < MIN_COPPER_RADIUS * 0.5f ||
+    //     copper2.radius < MIN_COPPER_RADIUS * 0.5f
+    // ) {
+    //     return { true, -INFINITY };
+    // }
 
-    if (segments_intersect(iron1.pos, iron2.pos, copper1.pos, copper2.pos)) {
-        return { true, -INFINITY };
-    }
+    // if (segments_intersect(iron1.pos, iron2.pos, copper1.pos, copper2.pos)) {
+    //     return { true, -INFINITY };
+    // }
 
     float coal_water_distance = INFINITY;
     BoxI32 coal_box(coal.pos, MAX_COAL_WATER_DISTANCE);
@@ -260,9 +260,9 @@ Finder<SeedCache>::EvalResult stage3_eval(
         }
     }
 
-    float area = union_area(s_patches) + union_area(r_patches);
+    // float area = union_area(s_patches) + union_area(r_patches);
 
-    float score = -area;
+    float score = 100.f; // could be area or any other metric, but for now just use the coal water distance as a heuristic
     if (std::isfinite(coal_water_distance)) {
         score -= COAL_WATER_DISTANCE_WEIGHT * std::abs(coal_water_distance) / MAX_COAL_WATER_DISTANCE;
     }
